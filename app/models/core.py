@@ -19,7 +19,6 @@ class User(Base):
     subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # Связь один-ко-многим (один юзер -> много конфигов)
     configs: Mapped[list["VPNConfig"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 

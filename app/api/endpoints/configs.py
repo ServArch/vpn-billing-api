@@ -12,13 +12,11 @@ router = APIRouter(prefix="/configs", tags=["VPN Configs"])
 
 @router.post("/", response_model=VpnConfigResponse)
 async def create_config(config_in: VpnConfigCreate, db: AsyncSession = Depends(get_db)):
-    # Проверяем, существует ли юзер (Foreign Key Validation)
     stmt = select(User).where(User.id == config_in.user_id)
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Генерируем UUID ключ для Xray (он создается на стороне бэкенда, а не юзером)
     new_uuid = str(uuid.uuid4())
 
     new_config = VPNConfig(
@@ -37,7 +35,6 @@ async def create_config(config_in: VpnConfigCreate, db: AsyncSession = Depends(g
 
 @router.get("/user/{user_id}", response_model=list[VpnConfigResponse])
 async def get_user_configs(user_id: int, db: AsyncSession = Depends(get_db)):
-    # Вытягиваем все активные конфиги конкретного пользователя
     stmt = select(VPNConfig).where(
         VPNConfig.user_id == user_id,
         VPNConfig.is_active == True
