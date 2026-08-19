@@ -1,6 +1,6 @@
 
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class UserCreate(BaseModel):
@@ -14,4 +14,4 @@ class UserResponse(BaseModel):
     subscription_expires_at: datetime | None
     is_active: bool
 
-
+    model_config = ConfigDict(from_attributes=True)
