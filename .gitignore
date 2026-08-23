@@ -1,18 +1,28 @@
-# Виртуальное окружение
+.venv/
 venv/
 env/
-
-# Секреты и конфиги
 .env
+.env.*
+!.env.example
 
-# Кэш питона
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 
-# База данных SQLite (чтобы не пушить тестовую базу)
 *.db
+*.sqlite
 *.sqlite3
 
-# Настройки PyCharm
 .idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
