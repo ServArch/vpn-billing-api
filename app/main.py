@@ -1,8 +1,7 @@
-
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from fastapi import FastAPI
 
-from app.api.endpoints import users, configs
+from app.api.endpoints import users, configs, billing
 from app.db.database import engine
 from app.models.core import Base
 
@@ -13,16 +12,19 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
+
 app = FastAPI(
     title="VPN Billing API",
-    description="REST API for manage VPN users",
-    version="1.0.0",
-    lifespan=lifespan
+    description="Async VPN billing microservice & RAG-based technical support engine",
+    version="0.2.0",
+    lifespan=lifespan,
 )
 
 app.include_router(users.router)
 app.include_router(configs.router)
+app.include_router(billing.router)
+
 
 @app.get("/ping", tags=["Health"])
 async def ping():
-    return {"status": "ok", "message": "Server is running!"}
+    return {"status": "ok", "service": "vpn-billing-api"}
