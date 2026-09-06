@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -10,6 +11,7 @@ from app.schemas.billing import (
     TariffResponse,
     SubscriptionCreate,
     SubscriptionResponse,
+    UserBillingStatusResponse,
 )
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
@@ -41,7 +43,11 @@ async def create_or_extend_subscription(
     sub_in: SubscriptionCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    stmt_user = select(User).where(User.telegram_id == sub_in.telegram_id)
+    stmt_user = (
+        select(User)
+        .options(selectinload(User.configs))
+        .where(User.telegram_id == sub_in.telegram_id)
+    )
     user_res = await db.execute(stmt_user)
     user = user_res.scalar_one_or_none()
     if not user:
@@ -83,12 +89,49 @@ async def create_or_extend_subscription(
     )
     db.add(new_sub)
 
-    # ensure all active configs remain enabled
-    stmt_configs = select(VPNConfig).where(VPNConfig.user_id == user.id)
-    configs_res = await db.execute(stmt_configs)
-    for cfg in configs_res.scalars():
+    for cfg in user.configs:
         cfg.is_active = True
 
     await db.commit()
     await db.refresh(new_sub)
     return new_sub
+
+
+@router.get("/status/{telegram_id}", response_model=UserBillingStatusResponse)
+async def get_user_billing_status(telegram_id: int, db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(User)
+        .options(
+            selectinload(User.subscriptions),
+            selectinload(User.configs),
+        )
+        .where(User.telegram_id == telegram_id)
+    )
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.now(timezone.utc)
+    active_subs = [s for s in user.subscriptions if s.status == SubscriptionStatus.ACTIVE and s.expires_at > now]
+    latest_expiry = max((s.expires_at for s in active_subs), default=None)
+    active_configs = [c for c in user.configs if c.is_active]
+
+    return UserBillingStatusResponse(
+        telegram_id=user.telegram_id,
+        username=user.username,
+        is_active=user.is_active,
+        has_active_subscription=bool(active_subs),
+        subscription_expires_at=latest_expiry,
+        active_configs_count=len(active_configs),
+        configs=[
+            {
+                "id": c.id,
+                "name": c.config_name,
+                "location": c.server_location,
+                "protocol": c.protocol,
+                "is_active": c.is_active,
+            }
+            for c in active_configs
+        ],
+    )

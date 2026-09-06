@@ -60,3 +60,12 @@ class TransactionResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class UserBillingStatusResponse(BaseModel):
+    telegram_id: int
+    username: str | None
+    is_active: bool
+    has_active_subscription: bool
+    subscription_expires_at: datetime | None
+    active_configs_count: int
+    configs: list[dict]
