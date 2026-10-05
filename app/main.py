@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from app.api.endpoints import users, configs, billing
+from app.api.endpoints import users, configs, billing, support
 from app.db.database import engine
 from app.models.core import Base
 
@@ -23,6 +23,7 @@ app = FastAPI(
 app.include_router(users.router)
 app.include_router(configs.router)
 app.include_router(billing.router)
+app.include_router(support.router)
 
 
 @app.get("/ping", tags=["Health"])
