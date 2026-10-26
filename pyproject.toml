@@ -16,6 +16,7 @@ dependencies = [
     "aioboto3>=13.1.0",
     "sentence-transformers>=3.0.0",
     "numpy>=1.26.0",
+    "greenlet>=3.0.0",
 ]
 
 [build-system]
@@ -27,3 +28,9 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.23.0",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.uv]
+package = false
